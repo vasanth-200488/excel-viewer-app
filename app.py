@@ -30,51 +30,40 @@ def filter_data(df, filters, logic):
 
     return df[combined_mask]
 
-def convert_df_to_excel(df):
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name='FilteredData')
-    output.seek(0)
-    return output
-
 if uploaded_file:
-    df = pd.read_excel(uploaded_file, engine='openpyxl')
+    df = pd.read_excel(uploaded_file)
+
+    # 🔧 Fix for data_editor serialization issue
     df = df.astype(str)
-    
-    st.subheader("✏️ Editable Full Data")
-    edited_df = st.data_editor(df, use_container_width=True, num_rows="dynamic")
 
-    # Global Search
-    st.subheader("🔎 Global Search (like Ctrl+F)")
-    search_term = st.text_input("Search across all columns", placeholder="Type to filter...")
-
-    searched_df = edited_df.copy()
-    if search_term:
-        mask = searched_df.astype(str).apply(lambda row: row.str.contains(search_term, case=False, na=False)).any(axis=1)
-        searched_df = searched_df[mask]
-
-    st.subheader("🔍 Filter Options")
-    columns_to_filter = st.multiselect("Select up to 3 columns to filter", searched_df.columns, max_selections=3)
-    filter_logic = st.radio("Filter logic", ["AND", "OR"], horizontal=True)
+    st.subheader("Filters")
+    filter_cols = st.multiselect("Select columns to filter", options=df.columns)
 
     filters = {}
-    for col in columns_to_filter:
-        options = searched_df[col].dropna().unique()
-        selected = st.multiselect(f"Values for {col}", options)
+    for col in filter_cols:
+        options = df[col].unique().tolist()
+        selected = st.multiselect(f"Filter by {col}", options=options, key=col)
         if selected:
             filters[col] = selected
 
-    filtered_df = filter_data(searched_df, filters, filter_logic)
+    logic = st.radio("Apply filter logic", ["AND", "OR"], horizontal=True)
 
-    st.subheader("📄 Filtered & Edited Data")
-    st.write(f"{len(filtered_df)} rows found")
-    st.dataframe(filtered_df, use_container_width=True)
+    filtered_df = filter_data(df, filters, logic)
 
-    if not filtered_df.empty:
-        excel_file = convert_df_to_excel(filtered_df)
-        st.download_button(
-            label="📥 Download filtered + edited data",
-            data=excel_file,
-            file_name="filtered_edited_data.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+    st.subheader("📄 View Full Data")
+    st.dataframe(df, use_container_width=True)  # View-only data table
+
+    st.subheader("✏️ Editable Filtered Data")
+    edited_df = st.data_editor(filtered_df, use_container_width=True, num_rows="dynamic")
+
+    # Download edited data as Excel
+    output = BytesIO()
+    edited_df.to_excel(output, index=False, engine='openpyxl')
+    st.download_button(
+        label="Download as Excel",
+        data=output.getvalue(),
+        file_name="filtered_data.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+else:
+    st.info("Please upload an Excel file.")
