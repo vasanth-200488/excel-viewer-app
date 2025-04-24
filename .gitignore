@@ -9,3 +9,4 @@ Thumbs.db
 
 # Ignore AppData and other user directories
 C:/Users/chand/AppData/
+*.xlsx
