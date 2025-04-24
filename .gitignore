@@ -1,0 +1,11 @@
+# Ignore Python cache and logs
+__pycache__/
+*.pyc
+*.log
+
+# Ignore system and hidden files
+.DS_Store
+Thumbs.db
+
+# Ignore AppData and other user directories
+C:/Users/chand/AppData/
