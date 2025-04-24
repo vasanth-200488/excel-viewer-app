@@ -39,6 +39,7 @@ def convert_df_to_excel(df):
 
 if uploaded_file:
     df = pd.read_excel(uploaded_file, engine='openpyxl')
+    df = df.astype(str)
     
     st.subheader("✏️ Editable Full Data")
     edited_df = st.data_editor(df, use_container_width=True, num_rows="dynamic")
