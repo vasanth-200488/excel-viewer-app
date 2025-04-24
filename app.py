@@ -33,6 +33,10 @@ def filter_data(df, filters, logic):
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
 
+    # 🗓 Format 'Month' column (adjust if your month column has a different name)
+    if 'Month' in df.columns:
+        df['Month'] = pd.to_datetime(df['Month'], errors='coerce').dt.strftime('%B %Y')
+
     # 🔧 Fix for data_editor serialization issue
     df = df.astype(str)
 
