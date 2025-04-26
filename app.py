@@ -1,103 +1,87 @@
 import streamlit as st
 import pandas as pd
-from io import BytesIO
+import os
 
 st.set_page_config(page_title="Excel Viewer", layout="wide")
-st.title("📊 Viewer App")
+st.title("📊 Excel Viewer – Edit, Filter & Download")
 
-# Define the path to the shared Excel file
-EXCEL_FILE_PATH = 'C:/Users/chand/excel-viewer-app/January Supplier Timesheet 25.xlsx'  # Modify this to your shared folder location
+# Path of Excel file in your repo
+EXCEL_FILE_PATH = "January Supplier Timesheet 25.xlsx"
 
-df = pd.read_excel(EXCEL_FILE_PATH)
+# Load existing Excel file if present
+if os.path.exists(EXCEL_FILE_PATH):
+    df = pd.read_excel(EXCEL_FILE_PATH)
+else:
+    df = pd.DataFrame()
 
-# (Optional) Allow user to upload another file if they want
-uploaded_file = st.file_uploader("Or upload another Excel file", type=["xlsx", "xls"])
+# File upload (optional for user)
+uploaded_file = st.file_uploader("Upload a new Excel file (optional)", type=["xlsx", "xls"])
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
-    st.info("Loaded uploaded Excel file.")
 
-st.dataframe(df)
+# Allow user to select filters
+if not df.empty:
+    st.subheader("🔎 Filter Data")
 
-# Allow users to upload a new file if they want
-uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx", "xls"])
+    filter_columns = st.multiselect("Select columns to filter by", df.columns)
+    filters = {}
+    for col in filter_columns:
+        options = df[col].dropna().unique().tolist()
+        selected = st.multiselect(f"Filter values for {col}", options)
+        if selected:
+            filters[col] = selected
 
-if uploaded_file:
-    try:
-        df = pd.read_excel(uploaded_file)
-        st.info("Loaded data from the uploaded file.")
-    except Exception as e:
-        st.error(f"Error loading uploaded file: {e}")
+    logic = st.radio("Filter Logic", ["AND", "OR"], horizontal=True)
 
-# Display the dataframe
-if 'df' in locals():
-    st.dataframe(df)
-else:
-    st.warning("No data available to display.")
-
-def filter_data(df, filters, logic):
-    if not filters:
-        return df
-
-    masks = []
-    for col, values in filters.items():
-        if values:
+    # Apply filters
+    def filter_data(df, filters, logic):
+        if not filters:
+            return df
+        masks = []
+        for col, values in filters.items():
             masks.append(df[col].isin(values))
+        if logic == "AND":
+            combined = masks[0]
+            for m in masks[1:]:
+                combined &= m
+        else:
+            combined = masks[0]
+            for m in masks[1:]:
+                combined |= m
+        return df[combined]
 
-    if not masks:
-        return df
+    filtered_df = filter_data(df, filters, logic)
 
-    if logic == "AND":
-        combined_mask = masks[0]
-        for m in masks[1:]:
-            combined_mask &= m
-    else:  # OR
-        combined_mask = masks[0]
-        for m in masks[1:]:
-            combined_mask |= m
+    # Display filtered data and editable
+    st.subheader("✏️ Editable Data Table")
+    edited_df = st.data_editor(filtered_df, use_container_width=True, num_rows="dynamic")
 
-    return df[combined_mask]
+    # Month column adjustment
+    if "Month" in edited_df.columns:
+        try:
+            edited_df["Month"] = edited_df["Month"].apply(lambda x: f"{x} 2025" if isinstance(x, str) and not str(x).endswith("2025") else x)
+        except Exception as e:
+            st.warning(f"Couldn't update 'Month' column automatically: {e}")
 
-if uploaded_file:
-    try:
-        df = pd.read_excel(uploaded_file)
+    # Download buttons
+    st.subheader("⬇️ Download Updated Data")
 
-        # 🗓 Format 'Month' column (adjust if your month column has a different name)
-        if 'Month' in df.columns:
-            df['Month'] = pd.to_datetime(df['Month'], errors='coerce').dt.strftime('%B %Y')
-
-        # 🔧 Fix for data_editor serialization issue
-        df = df.astype(str)
-
-        st.subheader("Filters")
-        filter_cols = st.multiselect("Select columns to filter", options=df.columns)
-
-        filters = {}
-        for col in filter_cols:
-            options = df[col].unique().tolist()
-            selected = st.multiselect(f"Filter by {col}", options=options, key=col)
-            if selected:
-                filters[col] = selected
-
-        logic = st.radio("Apply filter logic", ["AND", "OR"], horizontal=True)
-
-        filtered_df = filter_data(df, filters, logic)
-
-        st.subheader("📄 View Full Data")
-        st.dataframe(df, use_container_width=True)  # View-only data table
-
-        st.subheader("✏️ Editable Filtered Data")
-        edited_df = st.data_editor(filtered_df, use_container_width=True, num_rows="dynamic")
-
-        # Download edited data as Excel
+    def convert_df_to_excel(df):
         output = BytesIO()
-        edited_df.to_excel(output, index=False, engine='openpyxl')
-        st.download_button(
-            label="Download as Excel",
-            data=output.getvalue(),
-            file_name="filtered_data.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-    except Exception as e:
-        st.error(f"Error reading the file: {e}")
+        with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+            df.to_excel(writer, index=False, sheet_name="Sheet1")
+        processed_data = output.getvalue()
+        return processed_data
+
+    excel_data = convert_df_to_excel(edited_df)
+
+    st.download_button(
+        label="Download Excel File",
+        data=excel_data,
+        file_name="filtered_data.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
 else:
-    st.info("Please upload an Excel file.")
+    st.info("📂 Upload or load an Excel file to get started.")
+
