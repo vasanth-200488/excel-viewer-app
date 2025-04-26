@@ -54,7 +54,16 @@ if not df.empty:
 
     # Display filtered data and editable
     st.subheader("✏️ Editable Data Table")
-    edited_df = st.data_editor(filtered_df, use_container_width=True, num_rows="dynamic")
+    safe_filtered_df = filtered_df.copy()
+
+for col in safe_filtered_df.columns:
+    if safe_filtered_df[col].dtype == 'object':
+        safe_filtered_df[col] = safe_filtered_df[col].astype(str)
+    elif pd.api.types.is_datetime64_any_dtype(safe_filtered_df[col]):
+        safe_filtered_df[col] = safe_filtered_df[col].astype(str)
+
+edited_df = st.data_editor(safe_filtered_df, use_container_width=True, num_rows="dynamic")
+
 
     # Month column adjustment
     if "Month" in edited_df.columns:
