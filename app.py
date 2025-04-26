@@ -8,13 +8,30 @@ st.title("📊 Viewer App")
 # Define the path to the shared Excel file
 EXCEL_FILE_PATH = 'C:/Users/chand/excel-viewer-app/January Supplier Timesheet 25.xlsx'  # Modify this to your shared folder location
 
-# Check if the file exists and load it
 if os.path.exists(EXCEL_FILE_PATH):
-    df = pd.read_excel(EXCEL_FILE_PATH)
+    try:
+        df = pd.read_excel(EXCEL_FILE_PATH)
+        st.info("Loaded data from the shared file.")
+    except Exception as e:
+        st.error(f"Error loading shared Excel file: {e}")
 else:
-    st.error("The Excel file is not found in the shared location.")
+    st.warning("Shared file not found. Please upload an Excel file.")
 
+# Allow users to upload a new file if they want
 uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx", "xls"])
+
+if uploaded_file:
+    try:
+        df = pd.read_excel(uploaded_file)
+        st.info("Loaded data from the uploaded file.")
+    except Exception as e:
+        st.error(f"Error loading uploaded file: {e}")
+
+# Display the dataframe
+if 'df' in locals():
+    st.dataframe(df)
+else:
+    st.warning("No data available to display.")
 
 def filter_data(df, filters, logic):
     if not filters:
