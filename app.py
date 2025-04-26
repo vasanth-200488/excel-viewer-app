@@ -5,6 +5,15 @@ from io import BytesIO
 st.set_page_config(page_title="Excel Viewer", layout="wide")
 st.title("📊 Viewer App")
 
+# Define the path to the shared Excel file
+EXCEL_FILE_PATH = 'C:/Users/chand/excel-viewer-app/January Supplier Timesheet 25.xlsx'  # Modify this to your shared folder location
+
+# Check if the file exists and load it
+if os.path.exists(EXCEL_FILE_PATH):
+    df = pd.read_excel(EXCEL_FILE_PATH)
+else:
+    st.error("The Excel file is not found in the shared location.")
+
 uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx", "xls"])
 
 def filter_data(df, filters, logic):
