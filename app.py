@@ -3,7 +3,7 @@ import pandas as pd
 from io import BytesIO
 
 st.set_page_config(page_title="Excel Viewer", layout="wide")
-st.title("📊 Excel Viewer – Full Edit, Filter & Download")
+st.title("📊 Viewer App")
 
 uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx", "xls"])
 
