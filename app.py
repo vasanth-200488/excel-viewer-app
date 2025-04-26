@@ -31,43 +31,46 @@ def filter_data(df, filters, logic):
     return df[combined_mask]
 
 if uploaded_file:
-    df = pd.read_excel(uploaded_file)
+    try:
+        df = pd.read_excel(uploaded_file)
 
-    # 🗓 Format 'Month' column (adjust if your month column has a different name)
-    if 'Month' in df.columns:
-        df['Month'] = pd.to_datetime(df['Month'], errors='coerce').dt.strftime('%B %Y')
+        # 🗓 Format 'Month' column (adjust if your month column has a different name)
+        if 'Month' in df.columns:
+            df['Month'] = pd.to_datetime(df['Month'], errors='coerce').dt.strftime('%B %Y')
 
-    # 🔧 Fix for data_editor serialization issue
-    df = df.astype(str)
+        # 🔧 Fix for data_editor serialization issue
+        df = df.astype(str)
 
-    st.subheader("Filters")
-    filter_cols = st.multiselect("Select columns to filter", options=df.columns)
+        st.subheader("Filters")
+        filter_cols = st.multiselect("Select columns to filter", options=df.columns)
 
-    filters = {}
-    for col in filter_cols:
-        options = df[col].unique().tolist()
-        selected = st.multiselect(f"Filter by {col}", options=options, key=col)
-        if selected:
-            filters[col] = selected
+        filters = {}
+        for col in filter_cols:
+            options = df[col].unique().tolist()
+            selected = st.multiselect(f"Filter by {col}", options=options, key=col)
+            if selected:
+                filters[col] = selected
 
-    logic = st.radio("Apply filter logic", ["AND", "OR"], horizontal=True)
+        logic = st.radio("Apply filter logic", ["AND", "OR"], horizontal=True)
 
-    filtered_df = filter_data(df, filters, logic)
+        filtered_df = filter_data(df, filters, logic)
 
-    st.subheader("📄 View Full Data")
-    st.dataframe(df, use_container_width=True)  # View-only data table
+        st.subheader("📄 View Full Data")
+        st.dataframe(df, use_container_width=True)  # View-only data table
 
-    st.subheader("✏️ Editable Filtered Data")
-    edited_df = st.data_editor(filtered_df, use_container_width=True, num_rows="dynamic")
+        st.subheader("✏️ Editable Filtered Data")
+        edited_df = st.data_editor(filtered_df, use_container_width=True, num_rows="dynamic")
 
-    # Download edited data as Excel
-    output = BytesIO()
-    edited_df.to_excel(output, index=False, engine='openpyxl')
-    st.download_button(
-        label="Download as Excel",
-        data=output.getvalue(),
-        file_name="filtered_data.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+        # Download edited data as Excel
+        output = BytesIO()
+        edited_df.to_excel(output, index=False, engine='openpyxl')
+        st.download_button(
+            label="Download as Excel",
+            data=output.getvalue(),
+            file_name="filtered_data.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    except Exception as e:
+        st.error(f"Error reading the file: {e}")
 else:
     st.info("Please upload an Excel file.")
