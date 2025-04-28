@@ -3,15 +3,22 @@ import pandas as pd
 from io import BytesIO
 import os
 
-# Set page
+# Set page config
 st.set_page_config(page_title="Excel Viewer", layout="wide")
 st.title("📊 Excel Viewer – Full Edit, Filter & Download")
 
-# Hardcoded default file name
+# Default hardcoded file
 DEFAULT_FILE = "Data.xlsx"
 
-# Upload section
+# Upload file widget
 uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx", "xls"])
+
+# User selects source
+st.subheader("📂 Select Data Source")
+source_option = st.selectbox(
+    "Choose data source:",
+    ("Uploaded File", "Default File", "Dummy Data")
+)
 
 # Filter function
 def filter_data(df, filters, logic):
@@ -37,22 +44,41 @@ def filter_data(df, filters, logic):
 
     return df[combined_mask]
 
-# Load file
-if uploaded_file:
-    df = pd.read_excel(uploaded_file)
-    st.success("✅ Uploaded file loaded.")
-elif os.path.exists(DEFAULT_FILE):
-    df = pd.read_excel(DEFAULT_FILE)
-    st.warning(f"⚠️ No upload detected. Loaded default file: {DEFAULT_FILE}")
-else:
-    st.error("❌ No file uploaded, and default file not found. Please upload an Excel file.")
-    st.stop()
+# Create dummy data
+def create_dummy_data():
+    dummy_data = {
+        "Name": ["Alice", "Bob", "Charlie", "David"],
+        "Grade": ["A", "B", "C", "B"],
+        "Month": ["2025-04-01", "2025-04-01", "2025-04-01", "2025-04-01"]
+    }
+    return pd.DataFrame(dummy_data)
 
-# Optional: format 'Month' column
+# Load Data
+if source_option == "Uploaded File":
+    if uploaded_file is not None:
+        df = pd.read_excel(uploaded_file)
+        st.success("✅ Uploaded file loaded successfully.")
+    else:
+        st.warning("⚠️ Please upload a file to proceed.")
+        st.stop()
+
+elif source_option == "Default File":
+    if os.path.exists(DEFAULT_FILE):
+        df = pd.read_excel(DEFAULT_FILE)
+        st.success(f"✅ Loaded default file: {DEFAULT_FILE}")
+    else:
+        st.error(f"❌ Default file '{DEFAULT_FILE}' not found. Please check the file.")
+        st.stop()
+
+else:  # Dummy Data
+    df = create_dummy_data()
+    st.success("✅ Dummy data generated.")
+
+# Format 'Month' column if exists
 if 'Month' in df.columns:
     df['Month'] = pd.to_datetime(df['Month'], errors='coerce').dt.strftime('%B %Y')
 
-# Fix for editable table
+# Fix datatypes for editing
 df = df.astype(str)
 
 # Filters
@@ -70,7 +96,7 @@ logic = st.radio("Apply filter logic", ["AND", "OR"], horizontal=True)
 
 filtered_df = filter_data(df, filters, logic)
 
-# Display full data
+# View full data
 st.subheader("📄 View Full Data")
 st.dataframe(df, use_container_width=True)
 
