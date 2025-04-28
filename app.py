@@ -3,6 +3,8 @@ import pandas as pd
 from io import BytesIO
 import os
 
+st.write("Files in the current directory:", os.listdir())
+
 # Set page config
 st.set_page_config(page_title="Excel Viewer", layout="wide")
 st.title("📊 Excel Viewer – Full Edit, Filter & Download")
@@ -88,7 +90,14 @@ filter_cols = st.multiselect("Select columns to filter", options=df.columns)
 filters = {}
 for col in filter_cols:
     options = df[col].unique().tolist()
-    selected = st.multiselect(f"Filter by {col}", options=options, key=col)
+# **NEW**: Create a search input box for each column
+    search_term = st.text_input(f"Search in {col}", "")
+
+# **NEW**: Filter options based on search term
+    filtered_options = [option for option in options if search_term.lower() in str(option).lower()]
+
+# **NEW**: Create a multiselect dropdown for filtered options
+    selected = st.multiselect(f"Filter by {col}", options=filtered_options, key=col)
     if selected:
         filters[col] = selected
 
