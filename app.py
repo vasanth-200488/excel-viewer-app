@@ -1,15 +1,19 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
+import os
 
+# Set page
 st.set_page_config(page_title="Excel Viewer", layout="wide")
 st.title("📊 Excel Viewer – Full Edit, Filter & Download")
 
-# 1. Hardcoded default file
-DEFAULT_FILE = "Data.xlsx"  # make sure this file exists in the same directory
+# Hardcoded default file name
+DEFAULT_FILE = "Data.xlsx"
 
+# Upload section
 uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx", "xls"])
 
+# Filter function
 def filter_data(df, filters, logic):
     if not filters:
         return df
@@ -33,22 +37,26 @@ def filter_data(df, filters, logic):
 
     return df[combined_mask]
 
-# 2. Load uploaded file if available, else load default file
+# Load file
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
-    st.success("Excel file uploaded successfully!")
-else:
+    st.success("✅ Uploaded file loaded.")
+elif os.path.exists(DEFAULT_FILE):
     df = pd.read_excel(DEFAULT_FILE)
-    st.warning(f"No file uploaded. Loaded default file: {DEFAULT_FILE}")
+    st.warning(f"⚠️ No upload detected. Loaded default file: {DEFAULT_FILE}")
+else:
+    st.error("❌ No file uploaded, and default file not found. Please upload an Excel file.")
+    st.stop()
 
-# 🗓 Format 'Month' column
+# Optional: format 'Month' column
 if 'Month' in df.columns:
     df['Month'] = pd.to_datetime(df['Month'], errors='coerce').dt.strftime('%B %Y')
 
-# 🔧 Fix for data_editor serialization issue
+# Fix for editable table
 df = df.astype(str)
 
-st.subheader("Filters")
+# Filters
+st.subheader("🔎 Filters")
 filter_cols = st.multiselect("Select columns to filter", options=df.columns)
 
 filters = {}
@@ -62,17 +70,19 @@ logic = st.radio("Apply filter logic", ["AND", "OR"], horizontal=True)
 
 filtered_df = filter_data(df, filters, logic)
 
+# Display full data
 st.subheader("📄 View Full Data")
-st.dataframe(df, use_container_width=True)  # View-only data table
+st.dataframe(df, use_container_width=True)
 
+# Editable filtered data
 st.subheader("✏️ Editable Filtered Data")
 edited_df = st.data_editor(filtered_df, use_container_width=True, num_rows="dynamic")
 
-# Download edited data as Excel
+# Download button
 output = BytesIO()
 edited_df.to_excel(output, index=False, engine='openpyxl')
 st.download_button(
-    label="Download as Excel",
+    label="💾 Download as Excel",
     data=output.getvalue(),
     file_name="filtered_data.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
