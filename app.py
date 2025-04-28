@@ -6,7 +6,7 @@ st.set_page_config(page_title="Excel Viewer", layout="wide")
 st.title("📊 Excel Viewer – Full Edit, Filter & Download")
 
 # 1. Hardcoded default file
-DEFAULT_FILE = "default_data.xlsx"  # make sure this file exists in the same directory
+DEFAULT_FILE = "Data.xlsx"  # make sure this file exists in the same directory
 
 uploaded_file = st.file_uploader("Upload an Excel file", type=["xlsx", "xls"])
 
