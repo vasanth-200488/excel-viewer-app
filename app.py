@@ -7,7 +7,7 @@ import os
 st.set_page_config(page_title="Excel Viewer", layout="wide")
 st.title("📊 Excel Viewer – Full Edit, Filter & Download")
 
-st.write("Files in the current directory:", os.listdir())
+# st.write("Files in the current directory:", os.listdir())
 
 
 
