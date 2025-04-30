@@ -3,11 +3,13 @@ import pandas as pd
 from io import BytesIO
 import os
 
-st.write("Files in the current directory:", os.listdir())
-
 # Set page config
 st.set_page_config(page_title="Excel Viewer", layout="wide")
 st.title("📊 Excel Viewer – Full Edit, Filter & Download")
+
+st.write("Files in the current directory:", os.listdir())
+
+
 
 # Default hardcoded file
 DEFAULT_FILE = "Data.xlsx"
